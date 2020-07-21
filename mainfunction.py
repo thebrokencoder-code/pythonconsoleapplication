@@ -21,11 +21,14 @@ class CreateAccount:
             header()
             
        
-    def header():
+    
+
+def header():
          with open("accounts.csv","w") as accfile:
             datainput=csv.writer(accfile)
-            acc_attributes=['ACCNAME','ACCNO','TYPE','BALANCE','UserId','PassWord']
+            acc_attributes=['ACCNAME','ACCNO','TYPE','BALANCE','id','password']
             datainput.writerow(acc_attributes)
+            
 def createNewaccount():
     userid=str(input("Create a new user id =\t"))
     password=str(input("Create a new strong password for acc =\t"))
@@ -40,13 +43,13 @@ def createNewaccount():
 def userMode(role):
     print("Welcome user")
     print("please select an operation")
-    user_op=int(input("1.Create a new account\n2.Login Into Existing account\n1 or 2=\t"))
+    user_op=int(input("1.Create a new account\n2.Login Into Existing account\n1 or 2="))
     if(user_op==1):
         createNewaccount()
     elif(user_op==2):
-        print("enter login credentials")
-        userid = str(input("enter use id=\t"))
-        password=str(input("Enter user password=\t"))
+        print("\tenter login credentials")
+        userid = str(input("\tenter use id="))
+        password=str(input("\tEnter user password="))
         if(userid!=None):
             authFunction(userid,password,role)
         else:
@@ -54,10 +57,16 @@ def userMode(role):
     
 def authFunction(uid,password,role):
     if(role==1):
-        accountDetails=""
         if(path.isfile("accounts.csv")):
-            accfile = open("accounts.csv","r")
-            print(accfile.readlines())
+            with open('accounts.csv', newline='') as csvfile:
+                reader = csv.DictReader(csvfile)
+                for row in reader:
+                   accno=row['ACCNO']
+                   if(row["id"]==uid and row["password"]==password):
+                       session=True
+                       userServices(uid,accno,session)
+                   else:
+                       print("invalid credentials")
         else:
             print("NO records contact bank admin")
     elif(role==2):
@@ -66,21 +75,79 @@ def authFunction(uid,password,role):
         else:
             print("INVALID CREDENTIALS")
 
-def userServices():
+def userServices(uid,accno,session):
+    print("Welcome",uid)
     print("please select an operation\n")
-    service_num=int(input("\t 1.VIewBalance 2.AddAmount 3.WithdrawAmount \t 1or2or3= "))
+    service_num=int(input("1.VIewBalance 2.AddAmount 3.WithdrawAmount \t 1or2or3= "))
     if(service_num==1):
-        viewBalance()
+        viewBalance(uid,accno,session)
     elif(service_num==2):
-        addAmount()
+        addAmount(accno)
     elif(service_num==3):
-        withdraw()
+        withdraw(uid,accno,session)
     else:
         print("enter valid operation or exit")
-#main method hai yeh bank() call karne pe role enter karna hai
+
+#method for fetching logged user balance
+def viewBalance(uid,accno,session):
+    with open('accounts.csv','r') as accs:
+        reader = csv.DictReader(accs)
+        for row in reader:
+            if(row["id"]==uid and session==True):
+                balance=row['BALANCE']
+                print("YOUR CURRENT BALANCE =",balance)
+                print("1.return to previous menu 2.return to main menu 3.logout 1or2or3 =")
+                usop=int(input())
+                if usop==1:
+                    userServices(uid,accno,session)
+                elif usop==2:
+                    userMode(1)
+                elif usop==3:
+                    session=False
+                    bank()
+            else:
+                return "please login"
+#method to withdraw
+def withdraw(uid,accno,session):
+    withdrawal_amount=int(input("Enter amount to be withdrawn ="))
+    if(session):
+        with open('accounts.csv','r') as rec:
+            records=csv.DictReader(rec)
+            
+            for row in records:
+                if(row["id"]==uid and session==True):
+                    balance=int(row['BALANCE'])
+                    if balance<withdrawal_amount:
+                        print("insufficient funds ,your balance is =",balance)
+                    else:
+                        update=balance-withdrawal_amount
+                        rec.close()
+                        with open('accounts.csv','a') as accs:
+                            writer = csv.writer(accs)
+                            if(row["id"]==uid and session==True):
+                                row["BALANCE"]=str(update)
+                            accs.close()
+                        #writer.writerow()
+                        print("1.return to previous menu 2.return to main menu 3.logout 1or2or3 =")
+                        usop=int(input())
+                        if usop==1:
+                            userServices(uid,accno,session)
+                        elif usop==2:
+                            userMode(1)
+                        elif usop==3:
+                            session=False
+                            bank()
+                
+                
+                
+    
+            
+    
+
+#entry point function
 def bank():
     print("Welcome to ABCBANK please select mode of user")
-    role = int(input("1.customer \t 2. accountant \t1 or 2"))
+    role = int(input("1.customer \t 2. accountant \t1 or 2="))
     if(role==1):#user role k liye 1
         userMode(role) #ye method call hoga with role value as 1
     elif(role==2):
@@ -93,28 +160,26 @@ def bank():
 def accountantServices():
     print("Accountant Mode LOGIN SuccessFull")
     print("please select an operation")
-    user_op=int(input("1.view all user accounts\n2.particular user\n 1 or 2=\t"))
+    user_op=int(input("1.view all user accounts\n2.particular user\n 1 or 2="))
     if(user_op==1):
         viewAccounts()
     elif(user_op==2):
         viewUser()
         
 def accountMode(role):
-    print("Welcome Accountant")
-    print("Please login to continue")
-    userid = str(input("enter use id=\t"))
-    password=str(input("Enter user password=\t"))
+    print("\tWelcome Accountant")
+    print("\tPlease login to continue")
+    userid = str(input("\tenter use id="))
+    password=str(input("\tEnter user password="))
     if(userid!=None):
         authFunction(userid,password,role)
     else:
         print("Enter Valid Value")
     
 def viewAccounts():
-    accs=open("accounts.csv","r")
-    records=accs.readlines()
-    c=0
-    for record in records:
-        print(record)
-        c+=1
+    with open('accounts.csv', newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            print(row["ACCNAME"], row["ACCNO"])
         
 bank()
