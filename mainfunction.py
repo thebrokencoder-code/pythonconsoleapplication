@@ -1,6 +1,8 @@
 import random,csv
 import os.path
 from os import path
+import pandas
+
 class CreateAccount:
     def __init__(acc,acc_name,acc_no,acc_type,acc_balance,userid,password):
         acc.acc_name=acc_name
@@ -12,7 +14,7 @@ class CreateAccount:
     def newAccount(newacc):
         if(path.isfile("accounts.csv")):
             acc_details=[[newacc.acc_name,newacc.acc_no,newacc.acc_type,newacc.acc_balance,newacc.userid,newacc.password]]
-            with open("accounts.csv","a") as accfile:
+            with open("accounts.csv","a",newline='') as accfile:
                 datainput=csv.writer(accfile)
                 datainput.writerows(acc_details)
             accfile.close()
@@ -74,6 +76,8 @@ def authFunction(uid,password,role):
             accountantServices()
         else:
             print("INVALID CREDENTIALS")
+    else:
+        return "UNAUTHORISED ACCESS"
 
 def userServices(uid,accno,session):
     print("Welcome",uid)
@@ -82,7 +86,7 @@ def userServices(uid,accno,session):
     if(service_num==1):
         viewBalance(uid,accno,session)
     elif(service_num==2):
-        addAmount(accno)
+        addAmount(uid,accno,session)
     elif(service_num==3):
         withdraw(uid,accno,session)
     else:
@@ -111,34 +115,63 @@ def viewBalance(uid,accno,session):
 def withdraw(uid,accno,session):
     withdrawal_amount=int(input("Enter amount to be withdrawn ="))
     if(session):
-        with open('accounts.csv','r') as rec:
-            records=csv.DictReader(rec)
+        acc=pandas.read_csv("accounts.csv",index_col="ACCNO")
+        bal=acc.at[accno,'BALANCE']
+        if bal<withdrawal_amount:
+            print("INSUFFICIENT FUNDS,\nAVAILABLE BALANCE =",bal)
+            op=int(input("1.Try Again 2.EXIT 1or2= "))
+            if(op==1):
+                withdraw()
+                
+            elif(op==2):
+                userServices()
+                
+            else:
+                exit()
+        else:
+            up=bal-withdrawal_amount
+            acc.at[accno,'BALANCE']=up
+            acc.to_csv('accounts.csv')
+            print("1.return to previous menu 2.return to main menu 3.logout 1or2or3 =")
+            usop=int(input())
+            if usop==1:
+                userServices(uid,accno,session)
+            elif usop==2:
+                userMode(1)
+            elif usop==3:
+                session=False
+                bank()
+    else:
+        return "LOGIN AGAIN"
+        
+def addAmount(uid,accno,session):
+    credit_amount=int(input("Enter amount to be added ="))
+    if(session):
+        acc=pandas.read_csv("accounts.csv",index_col="ACCNO")
+        bal=acc.at[accno,'BALANCE']
+        up=bal+credit_amount
+        acc.at[accno,'BALANCE']=up
+        acc.to_csv('accounts.csv')
+        upacc=pandas.read_csv("accounts.csv",index_col="ACCNO")
+        bal=acc.at[accno,'BALANCE']
+        if bal==up:
+            print("Amount added Succesfully")
+        else:
+            print("Failed")
+        print("1.return to previous menu 2.return to main menu 3.logout 1or2or3 =")
+        usop=int(input())
+        if usop==1:
+            userServices(uid,accno,session)
+        elif usop==2:
+            userMode(1)
+        elif usop==3:
+            session=False
+            bank()
+    else:
+        return "LOGIN AGAIN"
+        
+        
             
-            for row in records:
-                if(row["id"]==uid and session==True):
-                    balance=int(row['BALANCE'])
-                    if balance<withdrawal_amount:
-                        print("insufficient funds ,your balance is =",balance)
-                    else:
-                        update=balance-withdrawal_amount
-                        rec.close()
-                        with open('accounts.csv','a') as accs:
-                            writer = csv.writer(accs)
-                            if(row["id"]==uid and session==True):
-                                row["BALANCE"]=str(update)
-                            accs.close()
-                        #writer.writerow()
-                        print("1.return to previous menu 2.return to main menu 3.logout 1or2or3 =")
-                        usop=int(input())
-                        if usop==1:
-                            userServices(uid,accno,session)
-                        elif usop==2:
-                            userMode(1)
-                        elif usop==3:
-                            session=False
-                            bank()
-                
-                
                 
     
             

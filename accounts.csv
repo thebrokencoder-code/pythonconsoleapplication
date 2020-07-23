@@ -1,1 +1,2 @@
-ACCNAME,ACCNO,TYPE,BALANCE,id,password
+ACCNO,ACCNAME,TYPE,BALANCE,id,password
+ABCBANK782,balaji,1,1200,bala,test
